@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'drf_yasg',
+    'main.apps.MainConfig',
 ]
 
 MIDDLEWARE = [
@@ -148,3 +150,27 @@ MEDIA_ROOT = f'{BASE_DIR}/media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Настройки кеширования
+CACHE_ENABLED = os.getenv('CACHE_ENABLED')
+
+if CACHE_ENABLED:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            # "LOCATION": "redis://127.0.0.1:6379",
+            "LOCATION": os.getenv('CACHE_LOCATION'),
+        }
+    }
+
+
+# Настройки для celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL-адрес брокера сообщений
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # URL-адрес брокера результатов
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'  # Часовой пояс для работы Celery
+CELERY_TASK_TRACK_STARTED = True  # Флаг отслеживания выполнения задач
+CELERY_TASK_TIME_LIMIT = 30 * 60  # Максимальное время на выполнение задачи

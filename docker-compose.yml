@@ -1,0 +1,55 @@
+version: '3.9'
+
+volumes:
+  uploader_postgres:
+  drf_static:
+
+services:
+  postgresql:
+    image: postgres:14.9-alpine
+    hostname: db
+    env_file: .env
+    volumes:
+      - uploader_postgres:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    hostname: backend
+    env_file:
+      - .env
+    command: python manage.py runserver 0.0.0.0:8000
+      && python manage.py collectstatic --noinput
+      && cp -r /app/collected_static/. /backend_static/static/
+    volumes:
+      - drf_static:/backend_static
+    depends_on:
+      - postgresql
+
+  nginx:
+    build:
+      ./nginx/
+    hostname: nginx
+    ports:
+      - 8000:80
+    volumes:
+      - drf_static:/staticfiles/
+    depends_on:
+      - backend
+
+
+  redis:
+    image: redis:7.0.5-alpine
+    ports:
+      - 6379:6379
+    hostname: redis
+    depends_on:
+      - backend
+
+  celery:
+    build: .
+    hostname: celery
+    env_file:
+      - .env
+    command: celery -A config worker -l INFO
+    depends_on:
+      - redis

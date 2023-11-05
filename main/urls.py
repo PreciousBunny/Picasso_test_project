@@ -8,6 +8,6 @@ app_name = MainConfig.name
 
 
 urlpatterns = [
-    path('upload', FileUploadAPIView.as_view(), name='file_upload'),
-    path('files', FileListAPIView.as_view(), name='file_list'),
+    path('upload/', FileUploadAPIView.as_view(), name='file_upload'),
+    path('files/', FileListAPIView.as_view(), name='file_list'),
 ]

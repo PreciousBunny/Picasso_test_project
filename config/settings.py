@@ -32,6 +32,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -88,9 +89,9 @@ DATABASES = {
         # 'NAME': BASE_DIR / 'db.sqlite3',
         # 'ENGINE': 'django.db.backends.postgresql',
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        'HOST': 'localhost',
+        'HOST': os.getenv('HOST_POSTGRES'),
         'NAME': os.getenv('NAME_POSTGRES'),
-        'PORT': 5432,
+        'PORT': os.getenv('PORT_POSTGRES'),
         'USER': os.getenv('USER_POSTGRES'),
         'PASSWORD': os.getenv('PASSWORD_POSTGRES'),
     }
@@ -134,15 +135,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-# STATIC_ROOT = os.path.join(BASE_DIR / 'static')
+STATIC_ROOT = os.path.join(BASE_DIR / 'collected_static')
 # STATICFILES_DIRS = (BASE_DIR / 'static',)
-STATICFILES_DIRS = [BASE_DIR / 'static']
+# STATICFILES_DIRS = [BASE_DIR / 'static']
 
 
 # Пути для загрузки данных от пользователей
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-MEDIA_ROOT = f'{BASE_DIR}/media'
+# MEDIA_ROOT = f'{BASE_DIR}/media'
 
 
 
@@ -166,8 +167,12 @@ if CACHE_ENABLED:
 
 
 # Настройки для celery
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL-адрес брокера сообщений
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # URL-адрес брокера результатов
+REDIS_PORT = "6379"
+REDIS_HOST = 'redis'
+
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 3600}
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

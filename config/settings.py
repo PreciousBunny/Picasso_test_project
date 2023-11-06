@@ -27,11 +27,11 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = 'django-insecure-taj@wmqrz+cnz%8obxcz@07g4#dt3p$-+fleoe&0_@@d76pv8d'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = bool(os.getenv('DEBUG'))
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(" ")
-
-
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOST"), "localhost", "127.0.0.1"]
+# ALLOWED_HOSTS = [ ]
 
 # Application definition
 
@@ -135,7 +135,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR / 'collected_static')
+STATIC_ROOT = 'staticfiles/'
+# STATIC_ROOT = os.path.join(BASE_DIR / 'collected_static')
 # STATICFILES_DIRS = (BASE_DIR / 'static',)
 # STATICFILES_DIRS = [BASE_DIR / 'static']
 
@@ -167,12 +168,12 @@ if CACHE_ENABLED:
 
 
 # Настройки для celery
-REDIS_PORT = "6379"
+REDIS_PORT = '6379'
 REDIS_HOST = 'redis'
 
-CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 3600}
-CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'  # URL-адрес брокера сообщений
+CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'  # URL-адрес брокера результатов
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

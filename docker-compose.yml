@@ -1,55 +1,89 @@
 version: '3.9'
 
-volumes:
-  uploader_postgres:
-  drf_static:
-
 services:
-  postgresql:
-    image: postgres:14.9-alpine
-    hostname: db
-    env_file: .env
+  db:
+    image: postgres:14-alpine
+    restart: always
+    container_name: db
+    environment:
+      PGDATA: /var/lib/postgresql/pgdata
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres' ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '5432:5432'
     volumes:
-      - uploader_postgres:/var/lib/postgresql/data
-
-  backend:
-    build: .
-    hostname: backend
+      - postgres_data:/var/lib/postgresql/data
     env_file:
       - .env
-    command: python manage.py runserver 0.0.0.0:8000
-      && python manage.py collectstatic --noinput
-      && cp -r /app/collected_static/. /backend_static/static/
+
+  backend:
+    restart: always
+    build: .
+    container_name: backend
+    command: >
+      bash -c "python  manage.py collectstatic --noinput
+      && python manage.py makemigrations
+      && python manage.py migrate
+      && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    expose:
+      - 8000
     volumes:
-      - drf_static:/backend_static
+      - .:/app
+      - .static_volume:/app/static
+      - .media_volume:/app/media
+    env_file:
+      - ./.env
     depends_on:
-      - postgresql
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   nginx:
-    build:
-      ./nginx/
-    hostname: nginx
-    ports:
-      - 8000:80
-    volumes:
-      - drf_static:/staticfiles/
-    depends_on:
-      - backend
-
+      build: ./nginx
+      restart: always
+      volumes:
+        - .static_volume:/app/static
+        - .media_volume:/app/media
+      ports:
+        - 8000:80
+      depends_on:
+        - backend
 
   redis:
-    image: redis:7.0.5-alpine
+    image: redis:7.2.3-alpine
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning
+    container_name: redis
+    healthcheck:
+      test: [ 'CMD-SHELL', 'redis-cli ping | grep PONG' ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/cache:/data
     ports:
-      - 6379:6379
-    hostname: redis
-    depends_on:
-      - backend
+      - "6379:6379"
+
 
   celery:
     build: .
-    hostname: celery
-    env_file:
-      - .env
-    command: celery -A config worker -l INFO
+    restart: always
+    container_name: celery
+    command: >
+      bash -c "celery -A config worker -l INFO"
+    volumes:
+      - .:/app
+    links:
+      - redis
     depends_on:
       - redis
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
